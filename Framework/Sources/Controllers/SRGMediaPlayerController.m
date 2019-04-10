@@ -63,7 +63,10 @@ static SRGPosition *SRGMediaPlayerControllerPositionInTimeRange(SRGPosition *pos
 @property (nonatomic, weak) id<SRGSegment> targetSegment;           // Will be nilled when reached
 @property (nonatomic, weak) id<SRGSegment> currentSegment;
 
+#if TARGET_OS_IOS
 @property (nonatomic) AVPictureInPictureController *pictureInPictureController;
+@property (nonatomic, copy) void (^pictureInPictureControllerCreationBlock)(AVPictureInPictureController *pictureInPictureController);
+#endif
 
 @property (nonatomic) SRGPosition *startPosition;                   // Will be nilled when reached
 @property (nonatomic, copy) void (^startCompletionHandler)(void);
@@ -76,14 +79,15 @@ static SRGPosition *SRGMediaPlayerControllerPositionInTimeRange(SRGPosition *pos
 
 @property (nonatomic, copy) NSString *preferredSubtitleLocalization;
 
-@property (nonatomic, copy) void (^pictureInPictureControllerCreationBlock)(AVPictureInPictureController *pictureInPictureController);
-
 @end
 
 @implementation SRGMediaPlayerController
 
 @synthesize view = _view;
+
+#if TARGET_OS_IOS
 @synthesize pictureInPictureController = _pictureInPictureController;
+#endif
 
 #pragma mark Object lifecycle
 
@@ -566,6 +570,8 @@ static SRGPosition *SRGMediaPlayerControllerPositionInTimeRange(SRGPosition *pos
     }
 }
 
+#if TARGET_OS_IOS
+
 - (void)setPictureInPictureController:(AVPictureInPictureController *)pictureInPictureController
 {
     if (_pictureInPictureController) {
@@ -587,6 +593,8 @@ static SRGPosition *SRGMediaPlayerControllerPositionInTimeRange(SRGPosition *pos
         [pictureInPictureController srg_addMainThreadObserver:self keyPath:@keypath(pictureInPictureController.pictureInPictureActive) options:0 block:observationBlock];
     }
 }
+
+#endif
 
 - (BOOL)allowsExternalNonMirroredPlayback
 {
@@ -965,9 +973,11 @@ static SRGPosition *SRGMediaPlayerControllerPositionInTimeRange(SRGPosition *pos
 
 - (void)stopWithUserInfo:(NSDictionary *)userInfo
 {
+#if TARGET_OS_IOS
     if (self.pictureInPictureController.isPictureInPictureActive) {
         [self.pictureInPictureController stopPictureInPicture];
     }
+#endif
     
     NSMutableDictionary *fullUserInfo = [userInfo mutableCopy] ?: [NSMutableDictionary dictionary];
     
@@ -997,7 +1007,9 @@ static SRGPosition *SRGMediaPlayerControllerPositionInTimeRange(SRGPosition *pos
     self.audioOption = nil;
     self.subtitleOption = nil;
     
+#if TARGET_OS_IOS
     self.pictureInPictureController = nil;
+#endif
 }
 
 #pragma mark Configuration
@@ -1302,6 +1314,8 @@ static SRGPosition *SRGMediaPlayerControllerPositionInTimeRange(SRGPosition *pos
     @weakify(self)
     self.playerPeriodicTimeObserver = [player addPeriodicTimeObserverForInterval:CMTimeMakeWithSeconds(0.1, NSEC_PER_SEC) queue:NULL usingBlock:^(CMTime time) {
         @strongify(self)
+        
+#if TARGET_OS_IOS
         if (self.playerLayer.readyForDisplay) {
             if (self.pictureInPictureController.playerLayer != self.playerLayer) {
                 self.pictureInPictureController = [[AVPictureInPictureController alloc] initWithPlayerLayer:self.playerLayer];
@@ -1311,6 +1325,7 @@ static SRGPosition *SRGMediaPlayerControllerPositionInTimeRange(SRGPosition *pos
         else {
             self.pictureInPictureController = nil;
         }
+#endif
         
         [self updateSegmentStatusForPlaybackState:self.playbackState previousPlaybackState:self.playbackState time:time];
     }];

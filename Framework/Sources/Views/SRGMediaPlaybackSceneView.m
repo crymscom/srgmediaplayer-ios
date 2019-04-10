@@ -7,13 +7,16 @@
 #import "SRGMediaPlaybackSceneView.h"
 
 #import "AVPlayer+SRGMediaPlayer.h"
-#import "SRGMotionManager.h"
 #import "SRGQuaternion.h"
 #import "SRGVideoNode.h"
 #import "UIDevice+SRGMediaPlayer.h"
 
 #import <libextobjc/libextobjc.h>
 #import <SpriteKit/SpriteKit.h>
+
+#if TARGET_OS_IOS
+#import "SRGMotionManager.h"
+#endif
 
 /**
  *  To manipulate node orientation, use quaternions only. Those are more robust against singularities than Euler
@@ -80,13 +83,17 @@ static void commonInit(SRGMediaPlaybackSceneView *self);
                                                selector:@selector(applicationDidEnterBackground:)
                                                    name:UIApplicationDidEnterBackgroundNotification
                                                  object:nil];
+#if TARGET_OS_IOS
         [SRGMotionManager start];
+#endif
     }
     else {
         [NSNotificationCenter.defaultCenter removeObserver:self
                                                       name:UIApplicationDidEnterBackgroundNotification
                                                     object:nil];
+#if TARGET_OS_IOS
         [SRGMotionManager stop];
+#endif
     }
 }
 
@@ -99,6 +106,7 @@ static void commonInit(SRGMediaPlaybackSceneView *self);
 
 - (void)renderer:(id<SCNSceneRenderer>)renderer updateAtTime:(NSTimeInterval)time
 {
+#if TARGET_OS_IOS
     // CMMotionManager might deliver events to a background queue.
     dispatch_async(dispatch_get_main_queue(), ^{
         CMMotionManager *motionManager = SRGMotionManager.motionManager;
@@ -110,6 +118,7 @@ static void commonInit(SRGMediaPlaybackSceneView *self);
         self.deviceBasedCameraOrientation = deviceBasedCameraOrientation;
         self.cameraNode.orientation = SRGRotateQuaternion(deviceBasedCameraOrientation, self.angularOffsets.x, self.angularOffsets.y);
     });
+#endif
 }
 
 #pragma mark SRGMediaPlaybackView protocol

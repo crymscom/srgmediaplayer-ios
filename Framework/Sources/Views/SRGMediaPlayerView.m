@@ -15,7 +15,9 @@
 
 #import <libextobjc/libextobjc.h>
 
+#if TARGET_OS_IOS
 static CMMotionManager *s_motionManager = nil;
+#endif
 
 static void commonInit(SRGMediaPlayerView *self);
 
@@ -31,6 +33,8 @@ static void commonInit(SRGMediaPlayerView *self);
 
 #pragma mark Class methods
 
+#if TARGET_OS_IOS
+
 + (CMMotionManager *)motionManager
 {
     return s_motionManager;
@@ -40,6 +44,8 @@ static void commonInit(SRGMediaPlayerView *self);
 {
     s_motionManager = motionManager;
 }
+
+#endif
 
 #pragma mark Object lifecycle
 
